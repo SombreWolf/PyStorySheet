@@ -4,6 +4,7 @@ import uuid
 import os
 
 DATA_DIRECTORY = 'data\\'
+FONT = ("Tahoma", 13)
 
 
 class Content:
@@ -240,7 +241,7 @@ if __name__ == '__main__':
     # Initialisation
     application = init()
     # application = Application({'version': 1, 'projects': [], 'settings': {'language': 'FR_fr', 'hotkeys': []}})
-    window = Gui.Window('Story Sheet', generate_main_layout(application))
+    window = Gui.Window('Story Sheet', generate_main_layout(application), font=FONT)
     current_window = 0
     current_project = Project({})
     current_sheet = Sheet({})
@@ -256,23 +257,23 @@ if __name__ == '__main__':
             elif current_window == 1:
                 window.close()
                 current_window = 0
-                window = Gui.Window('Story Sheet', generate_main_layout(application))
+                window = Gui.Window('Story Sheet', generate_main_layout(application), font=FONT)
             elif current_window == 2:
                 window.close()
                 current_window = 1
-                window = Gui.Window('Project', generate_project_layout(current_project))
+                window = Gui.Window('Project', generate_project_layout(current_project), font=FONT)
 
         if event == '-NEW_PROJECT-':
             window.close()
             current_window = 1
             current_project = Project({})
-            window = Gui.Window('New Project', generate_project_layout(current_project))
+            window = Gui.Window('New Project', generate_project_layout(current_project), font=FONT)
 
         if event == '-NEW_SHEET-':
             window.close()
             current_window = 2
             current_sheet = Sheet({})
-            window = Gui.Window('New Sheet', generate_sheet_layout(current_sheet))
+            window = Gui.Window('New Sheet', generate_sheet_layout(current_sheet), font=FONT)
 
         if event == '-SAVE_PROJECT-':
             # save date in current_project
@@ -293,12 +294,12 @@ if __name__ == '__main__':
             window.close()
             current_window = 1
             current_project = application.get_project_from_key(event)
-            window = Gui.Window('Edit Project', generate_project_layout(current_project))
+            window = Gui.Window('Edit Project', generate_project_layout(current_project), font=FONT)
 
         if event in current_project.keys_sheets:
             window.close()
             current_window = 2
             current_sheet = current_project.get_sheet_from_key(event)
-            window = Gui.Window('Edit Sheet', generate_sheet_layout(current_sheet))
+            window = Gui.Window('Edit Sheet', generate_sheet_layout(current_sheet), font=FONT)
 
     window.close()
