@@ -8,9 +8,12 @@ DATA_DIRECTORY = 'data\\'
 
 class Content:
     def __init__(self, data: dict):
+        # TODO verify the integrity of data given the type
         if len(data) != 0:
             self.type = 1
-            self.entry = 'name'
+            keys = list(data.keys())
+            keys.remove('type')
+            self.entry = keys[0]
             self.content = data[self.entry]
         else:
             self.type = 1
@@ -208,7 +211,6 @@ def generate_project_layout(project: Project) -> []:
 
 
 def generate_sheet_layout(sheet: Sheet) -> []:
-    # TODO Template to be define
     layout = [
         [
             Gui.Input(default_text=sheet.name, key='-INPUT_NAME_SHEET-')
@@ -218,7 +220,15 @@ def generate_sheet_layout(sheet: Sheet) -> []:
         ]
     ]
     if len(sheet.contents) == 0:
-        sheet.add_content(Content({}))
+        sheet.add_content(Content({'type': 1, 'Nickname': ''}))
+        sheet.add_content(Content({'type': 1, 'Nickname Origin': ''}))
+        sheet.add_content(Content({'type': 1, 'Age': ''}))
+        sheet.add_content(Content({'type': 1, 'Gender': ''}))
+        sheet.add_content(Content({'type': 1, 'Date of Birth': ''}))
+        sheet.add_content(Content({'type': 1, 'Place of Birth': ''}))
+        sheet.add_content(Content({'type': 1, 'Ethnicity/Race/Species': ''}))
+        sheet.add_content(Content({'type': 1, 'Occupation/Job': ''}))
+        sheet.add_content(Content({'type': 1, 'Job Rank/Position': ''}))
     for i in range(len(sheet.contents)):
         layout.append([
             Gui.Text(sheet.contents[i].entry),
