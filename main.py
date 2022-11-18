@@ -7,6 +7,7 @@ DATA_DIRECTORY = 'data\\'
 
 
 class Content:
+    """Class for content"""
     def __init__(self, data: dict):
         # TODO verify the integrity of data given the type
         if len(data) != 0:
@@ -36,7 +37,7 @@ class Sheet:
             self.contents = [Content(content) for content in data['contents']]
         else:
             self.version = 0
-            self.id = uuid.uuid4()
+            self.id = str(uuid.uuid4())
             self.name = ''
             self.contents = []
         # sub data
@@ -49,7 +50,7 @@ class Sheet:
 
     def extract(self) -> dict:
         contents = [content.extract() for content in self.contents]
-        return {'version': self.version, 'id': str(self.id), 'name': self.name, 'contents': contents}
+        return {'version': self.version, 'id': self.id, 'name': self.name, 'contents': contents}
 
 
 class Project:
@@ -64,30 +65,48 @@ class Project:
             self.sheets = [Sheet(sheet) for sheet in data['sheets']]
         else:
             self.version = 0
-            self.id = uuid.uuid4()
+            self.id = str(uuid.uuid4())
             self.name = ''
             self.sheets = []
         # sub data
-        self.keys_sheets = ['-EDIT_SHEET_' + str(self.sheets[i].id) + '-' for i in range(len(self.sheets))]
+        self.keys_edit_sheets = ['-EDIT_SHEET_' + self.sheets[i].id + '-' for i in range(len(self.sheets))]
+        self.keys_delete_sheets = ['-DELETE_SHEET_' + self.sheets[i].id + '-' for i in range(len(self.sheets))]
 
-    def get_sheet_from_key(self, key: str) -> Sheet:
-        for project in self.sheets:
-            if key == '-EDIT_SHEET_' + str(project.id) + '-':
-                return project
+    def get_sheet_from_key_edit(self, key: str) -> Sheet:
+        for sheet in self.sheets:
+            if key == '-EDIT_SHEET_' + sheet.id + '-':
+                return sheet
+        return Sheet({})
+
+    def get_sheet_from_key_delete(self, key: str) -> Sheet:
+        for sheet in self.sheets:
+            if key == '-DELETE_SHEET_' + sheet.id + '-':
+                return sheet
         return Sheet({})
 
     def add_sheet(self, sheet: Sheet):
         for i in range(len(self.sheets)):
-            if sheet.id == self.sheets[i]:
+            if sheet.id == self.sheets[i].id:
                 self.sheets[i] = sheet
         if sheet not in self.sheets:
             self.sheets.append(sheet)
-        if len(self.sheets) != len(self.keys_sheets):
-            self.keys_sheets = ['-EDIT_SHEET_' + str(self.sheets[i].id) + '-' for i in range(len(self.sheets))]
+        if len(self.sheets) != len(self.keys_edit_sheets):
+            self.keys_edit_sheets = ['-EDIT_SHEET_' + self.sheets[i].id + '-' for i in range(len(self.sheets))]
+        if len(self.sheets) != len(self.keys_delete_sheets):
+            self.keys_delete_sheets = ['-DELETE_SHEET_' + self.sheets[i].id + '-' for i in range(len(self.sheets))]
+
+    def delete_sheet(self, sheet: Sheet):
+        for i in range(len(self.sheets)):
+            if sheet.id == self.sheets[i].id:
+                self.sheets.pop(i)
+        if len(self.sheets) != len(self.keys_edit_sheets):
+            self.keys_edit_sheets = ['-EDIT_SHEET_' + self.sheets[i].id + '-' for i in range(len(self.sheets))]
+        if len(self.sheets) != len(self.keys_delete_sheets):
+            self.keys_delete_sheets = ['-DELETE_SHEET_' + self.sheets[i].id + '-' for i in range(len(self.sheets))]
 
     def extract(self) -> dict:
         sheets = [sheet.extract() for sheet in self.sheets]
-        return {'version': self.version, 'id': str(self.id), 'name': self.name, 'sheets': sheets}
+        return {'version': self.version, 'id': self.id, 'name': self.name, 'sheets': sheets}
 
 
 class Settings:
@@ -115,22 +134,42 @@ class Application:
             self.settings = {'language': 'FR_fr', 'hotkeys': []}
             self.projects = []
         # sub data
-        self.keys_projects = ['-EDIT_PROJECT_' + str(self.projects[i].id) + '-' for i in range(len(self.projects))]
+        self.keys_edit_projects = ['-EDIT_PROJECT_' + self.projects[i].id + '-' for i in range(len(self.projects))]
+        self.keys_delete_projects = ['-DELETE_PROJECT_' + self.projects[i].id + '-' for i in range(len(self.projects))]
 
-    def get_project_from_key(self, key: str) -> Project:
+    def get_project_from_key_edit(self, key: str) -> Project:
         for project in self.projects:
-            if key == '-EDIT_PROJECT_' + str(project.id) + '-':
+            if key == '-EDIT_PROJECT_' + project.id + '-':
+                return project
+        return Project({})
+
+    def get_project_from_key_delete(self, key: str) -> Project:
+        for project in self.projects:
+            if key == '-DELETE_PROJECT_' + project.id + '-':
                 return project
         return Project({})
 
     def add_project(self, project: Project):
         for i in range(len(self.projects)):
-            if project.id == self.projects[i]:
+            if project.id == self.projects[i].id:
                 self.projects[i] = project
         if project not in self.projects:
             self.projects.append(project)
-        if len(self.projects) != len(self.keys_projects):
-            self.keys_projects = ['-EDIT_PROJECT_' + str(self.projects[i].id) + '-' for i in range(len(self.projects))]
+        if len(self.projects) != len(self.keys_edit_projects):
+            self.keys_edit_projects = ['-EDIT_PROJECT_' + self.projects[i].id + '-' for i in range(len(self.projects))]
+        if len(self.projects) != len(self.keys_delete_projects):
+            self.keys_delete_projects = ['-DELETE_PROJECT_' + self.projects[i].id + '-' for i in
+                                         range(len(self.projects))]
+
+    def delete_project(self, project: Project):
+        for i in range(len(self.projects)):
+            if project.id == self.projects[i].id:
+                self.projects.pop(i)
+        if len(self.projects) != len(self.keys_edit_projects):
+            self.keys_edit_projects = ['-EDIT_PROJECT_' + self.projects[i].id + '-' for i in range(len(self.projects))]
+        if len(self.projects) != len(self.keys_delete_projects):
+            self.keys_delete_projects = ['-DELETE_PROJECT_' + self.projects[i].id + '-' for i in
+                                         range(len(self.projects))]
 
     def extract(self) -> dict:
         projects = [project.extract() for project in self.projects]
@@ -169,12 +208,14 @@ def generate_main_layout(app: Application) -> []:
     ]
     if len(app.projects) == 0:
         layout.append([Gui.Text('No project')])
-    for i in range(len(app.projects)):
-        layout.append([
-            Gui.Text(app.projects[i].name),
-            Gui.Push(),
-            Gui.Button('Edit', key='-EDIT_PROJECT_' + str(app.projects[i].id) + '-')
-        ])
+    else:
+        for i in range(len(app.projects)):
+            layout.append([
+                Gui.Text(app.projects[i].name),
+                Gui.Push(),
+                Gui.Button('Edit', key='-EDIT_PROJECT_' + app.projects[i].id + '-'),
+                Gui.Button('Delete', key='-DELETE_PROJECT_' + app.projects[i].id + '-')
+            ])
     return layout
 
 
@@ -197,7 +238,8 @@ def generate_project_layout(project: Project) -> []:
         layout.append([
             Gui.Text(project.sheets[i].name),
             Gui.Push(),
-            Gui.Button('Edit', key='-EDIT_SHEET_' + str(project.sheets[i].id) + '-')
+            Gui.Button('Edit', key='-EDIT_SHEET_' + project.sheets[i].id + '-'),
+            Gui.Button('Delete', key='-DELETE_SHEET_' + project.sheets[i].id + '-')
         ])
     layout.append([
         Gui.HorizontalSeparator()
@@ -241,7 +283,7 @@ def generate_sheet_layout(sheet: Sheet) -> []:
     layout.append([
         Gui.Button('Save', key='-SAVE_SHEET-'),
         Gui.Push(),
-        Gui.Button('Close', key='-CLOSE-', tooltip='Data are not saved')
+        Gui.Button('Close', key='-CLOSE-', tooltip='Data may not be saved')
     ])
     return layout
 
@@ -249,7 +291,6 @@ def generate_sheet_layout(sheet: Sheet) -> []:
 if __name__ == '__main__':
     # Initialisation
     application = init()
-    # application = Application({'version': 1, 'projects': [], 'settings': {'language': 'FR_fr', 'hotkeys': []}})
     window = Gui.Window('Story Sheet', generate_main_layout(application))
     current_window = 0
     current_project = Project({})
@@ -299,16 +340,30 @@ if __name__ == '__main__':
             # save sheet in current_project
             current_project.add_sheet(current_sheet)
 
-        if event in application.keys_projects:
+        if event in application.keys_edit_projects:
             window.close()
             current_window = 1
-            current_project = application.get_project_from_key(event)
+            current_project = application.get_project_from_key_edit(event)
             window = Gui.Window('Edit Project', generate_project_layout(current_project))
 
-        if event in current_project.keys_sheets:
+        if event in application.keys_delete_projects:
+            window.close()
+            current_window = 0
+            delete_project = application.get_project_from_key_delete(event)
+            application.delete_project(delete_project)
+            window = Gui.Window('Story Sheet', generate_main_layout(application))
+
+        if event in current_project.keys_edit_sheets:
             window.close()
             current_window = 2
-            current_sheet = current_project.get_sheet_from_key(event)
+            current_sheet = current_project.get_sheet_from_key_edit(event)
             window = Gui.Window('Edit Sheet', generate_sheet_layout(current_sheet))
+
+        if event in current_project.keys_delete_sheets:
+            window.close()
+            current_window = 1
+            delete_sheet = current_project.get_sheet_from_key_delete(event)
+            current_project.delete_sheet(delete_sheet)
+            window = Gui.Window('Edit Project', generate_project_layout(current_project))
 
     window.close()
