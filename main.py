@@ -8,6 +8,7 @@ DATA_DIRECTORY = 'data\\'
 
 class Content:
     """Class for content"""
+
     def __init__(self, data: dict):
         # TODO verify the integrity of data given the type
         if len(data) != 0:
@@ -70,11 +71,18 @@ class Project:
             self.sheets = []
         # sub data
         self.keys_edit_sheets = ['-EDIT_SHEET_' + self.sheets[i].id + '-' for i in range(len(self.sheets))]
+        self.keys_export_sheets = ['-EXPORT_SHEET_' + self.sheets[i].id + '-' for i in range(len(self.sheets))]
         self.keys_delete_sheets = ['-DELETE_SHEET_' + self.sheets[i].id + '-' for i in range(len(self.sheets))]
 
     def get_sheet_from_key_edit(self, key: str) -> Sheet:
         for sheet in self.sheets:
             if key == '-EDIT_SHEET_' + sheet.id + '-':
+                return sheet
+        return Sheet({})
+
+    def get_sheet_from_key_export(self, key: str) -> Sheet:
+        for sheet in self.sheets:
+            if key == '-EXPORT_SHEET_' + sheet.id + '-':
                 return sheet
         return Sheet({})
 
@@ -92,6 +100,8 @@ class Project:
             self.sheets.append(sheet)
         if len(self.sheets) != len(self.keys_edit_sheets):
             self.keys_edit_sheets = ['-EDIT_SHEET_' + self.sheets[i].id + '-' for i in range(len(self.sheets))]
+        if len(self.sheets) != len(self.keys_export_sheets):
+            self.keys_export_sheets = ['-EXPORT_SHEET_' + self.sheets[i].id + '-' for i in range(len(self.sheets))]
         if len(self.sheets) != len(self.keys_delete_sheets):
             self.keys_delete_sheets = ['-DELETE_SHEET_' + self.sheets[i].id + '-' for i in range(len(self.sheets))]
 
@@ -101,6 +111,8 @@ class Project:
                 self.sheets.pop(i)
         if len(self.sheets) != len(self.keys_edit_sheets):
             self.keys_edit_sheets = ['-EDIT_SHEET_' + self.sheets[i].id + '-' for i in range(len(self.sheets))]
+        if len(self.sheets) != len(self.keys_export_sheets):
+            self.keys_export_sheets = ['-EXPORT_SHEET_' + self.sheets[i].id + '-' for i in range(len(self.sheets))]
         if len(self.sheets) != len(self.keys_delete_sheets):
             self.keys_delete_sheets = ['-DELETE_SHEET_' + self.sheets[i].id + '-' for i in range(len(self.sheets))]
 
@@ -135,11 +147,18 @@ class Application:
             self.projects = []
         # sub data
         self.keys_edit_projects = ['-EDIT_PROJECT_' + self.projects[i].id + '-' for i in range(len(self.projects))]
+        self.keys_export_projects = ['-EXPORT_PROJECT_' + self.projects[i].id + '-' for i in range(len(self.projects))]
         self.keys_delete_projects = ['-DELETE_PROJECT_' + self.projects[i].id + '-' for i in range(len(self.projects))]
 
     def get_project_from_key_edit(self, key: str) -> Project:
         for project in self.projects:
             if key == '-EDIT_PROJECT_' + project.id + '-':
+                return project
+        return Project({})
+
+    def get_project_from_key_export(self, key: str) -> Project:
+        for project in self.projects:
+            if key == '-EXPORT_PROJECT_' + project.id + '-':
                 return project
         return Project({})
 
@@ -157,6 +176,9 @@ class Application:
             self.projects.append(project)
         if len(self.projects) != len(self.keys_edit_projects):
             self.keys_edit_projects = ['-EDIT_PROJECT_' + self.projects[i].id + '-' for i in range(len(self.projects))]
+        if len(self.projects) != len(self.keys_export_projects):
+            self.keys_export_projects = ['-EXPORT_PROJECT_' + self.projects[i].id + '-' for i in
+                                         range(len(self.projects))]
         if len(self.projects) != len(self.keys_delete_projects):
             self.keys_delete_projects = ['-DELETE_PROJECT_' + self.projects[i].id + '-' for i in
                                          range(len(self.projects))]
@@ -167,6 +189,9 @@ class Application:
                 self.projects.pop(i)
         if len(self.projects) != len(self.keys_edit_projects):
             self.keys_edit_projects = ['-EDIT_PROJECT_' + self.projects[i].id + '-' for i in range(len(self.projects))]
+        if len(self.projects) != len(self.keys_delete_projects):
+            self.keys_export_projects = ['-EXPORT_PROJECT_' + self.projects[i].id + '-' for i in
+                                         range(len(self.projects))]
         if len(self.projects) != len(self.keys_delete_projects):
             self.keys_delete_projects = ['-DELETE_PROJECT_' + self.projects[i].id + '-' for i in
                                          range(len(self.projects))]
@@ -194,6 +219,18 @@ def save(data: Application) -> None:
         json.dump(data.extract(), data_file)
 
 
+def save_project(project: Project):
+    name = "P[" + project.name + "]_" + project.id
+    with open(DATA_DIRECTORY + name + '.json', 'x') as project_file:
+        json.dump(project.extract(), project_file)
+
+
+def save_sheet(sheet: Sheet):
+    name = "S[" + sheet.name + "]_" + sheet.id
+    with open(DATA_DIRECTORY + name + '.json', 'x') as sheet_file:
+        json.dump(sheet.extract(), sheet_file)
+
+
 def generate_main_layout(app: Application) -> []:
     layout = [
         [
@@ -214,8 +251,17 @@ def generate_main_layout(app: Application) -> []:
                 Gui.Text(app.projects[i].name),
                 Gui.Push(),
                 Gui.Button('Edit', key='-EDIT_PROJECT_' + app.projects[i].id + '-'),
+                Gui.Button('Export', key='-EXPORT_PROJECT_' + app.projects[i].id + '-'),
                 Gui.Button('Delete', key='-DELETE_PROJECT_' + app.projects[i].id + '-')
             ])
+    layout.append([
+        Gui.HorizontalSeparator()
+    ])
+    layout.append([
+        Gui.Push(),
+        Gui.FileBrowse('Import', enable_events=True, key='-IMPORT_PROJECT-', target='-IMPORT_PROJECT-',
+                       file_types=(('JSON', '.json'),))
+    ])
     return layout
 
 
@@ -224,6 +270,7 @@ def generate_project_layout(project: Project) -> []:
         [
             Gui.Input(default_text=project.name, key='-INPUT_NAME_PROJECT-'),
             Gui.Push(),
+            Gui.Button('Import', key='-IMPORT_SHEET-'),
             Gui.Button('New Sheet', key='-NEW_SHEET-')
         ],
         [
@@ -239,6 +286,7 @@ def generate_project_layout(project: Project) -> []:
             Gui.Text(project.sheets[i].name),
             Gui.Push(),
             Gui.Button('Edit', key='-EDIT_SHEET_' + project.sheets[i].id + '-'),
+            Gui.Button('Export', key='-EXPORT_SHEET_' + project.sheets[i].id + '-'),
             Gui.Button('Delete', key='-DELETE_SHEET_' + project.sheets[i].id + '-')
         ])
     layout.append([
@@ -300,6 +348,8 @@ if __name__ == '__main__':
     while True:
         event, values = window.read()
 
+        print(values)
+
         if event == Gui.WIN_CLOSED or event == '-CLOSE-':
             if current_window == 0:
                 save(application)
@@ -334,7 +384,7 @@ if __name__ == '__main__':
         if event == '-SAVE_SHEET-':
             # save data in current_sheet
             current_sheet.name = values['-INPUT_NAME_SHEET-']
-            # TODO for multiple type of content, split on '_' and match [1]
+            # TODO for multiple type of content, split on '_' and match [1] for type
             for j in range(len(current_sheet.contents)):
                 current_sheet.contents[j].content = values['-INPUT_1_' + str(j) + '-']
             # save sheet in current_project
@@ -345,6 +395,11 @@ if __name__ == '__main__':
             current_window = 1
             current_project = application.get_project_from_key_edit(event)
             window = Gui.Window('Edit Project', generate_project_layout(current_project))
+
+        if event in application.keys_export_projects:
+            current_window = 0
+            export_project = application.get_project_from_key_export(event)
+            save_project(export_project)
 
         if event in application.keys_delete_projects:
             window.close()
@@ -359,11 +414,34 @@ if __name__ == '__main__':
             current_sheet = current_project.get_sheet_from_key_edit(event)
             window = Gui.Window('Edit Sheet', generate_sheet_layout(current_sheet))
 
+        if event in current_project.keys_export_sheets:
+            current_window = 1
+            export_sheet = current_project.get_sheet_from_key_export(event)
+            save_sheet(export_sheet)
+
         if event in current_project.keys_delete_sheets:
             window.close()
             current_window = 1
             delete_sheet = current_project.get_sheet_from_key_delete(event)
             current_project.delete_sheet(delete_sheet)
             window = Gui.Window('Edit Project', generate_project_layout(current_project))
+
+        if event == '-IMPORT_PROJECT-':
+            project_path = values['-IMPORT_PROJECT-']
+            window.close()
+            current_window = 1
+            with open(project_path) as data_file:
+                project_data = json.load(data_file)
+                current_project = Project(project_data)
+            window = Gui.Window('Import Project', generate_project_layout(current_project))
+
+        if event == '-IMPORT_SHEET-':
+            sheet_path = values['-IMPORT_SHEET-']
+            window.close()
+            current_window = 1
+            with open(sheet_path) as data_file:
+                sheet_data = json.load(data_file)
+                current_sheet = Sheet(sheet_data)
+            window = Gui.Window('Import Sheet', generate_sheet_layout(current_sheet))
 
     window.close()
