@@ -231,7 +231,8 @@ def save_sheet(sheet: Sheet):
         json.dump(sheet.extract(), sheet_file)
 
 
-def generate_main_layout(app: Application) -> []:
+def generate_main_window(app: Application) -> Gui.Window:
+    column_layout = []
     layout = [
         [
             Gui.Button('Settings', key='-SETTINGS-'),
@@ -247,30 +248,34 @@ def generate_main_layout(app: Application) -> []:
         layout.append([Gui.Text('No project')])
     else:
         for i in range(len(app.projects)):
-            layout.append([
+            column_layout.append([
                 Gui.Text(app.projects[i].name),
                 Gui.Push(),
                 Gui.Button('Edit', key='-EDIT_PROJECT_' + app.projects[i].id + '-'),
                 Gui.Button('Export', key='-EXPORT_PROJECT_' + app.projects[i].id + '-'),
                 Gui.Button('Delete', key='-DELETE_PROJECT_' + app.projects[i].id + '-')
             ])
-    layout.append([
-        Gui.HorizontalSeparator()
-    ])
-    layout.append([
-        Gui.Push(),
-        Gui.FileBrowse('Import', enable_events=True, key='-IMPORT_PROJECT-', target='-IMPORT_PROJECT-',
-                       file_types=(('JSON', '.json'),))
-    ])
-    return layout
+        layout.append([Gui.Column(column_layout, size=(500, 150), expand_x=True, expand_y=True, scrollable=True,
+                                  vertical_scroll_only=True)])
+        layout.append([
+            Gui.HorizontalSeparator()
+        ])
+        layout.append([
+            Gui.Push(),
+            Gui.FileBrowse('Import', enable_events=True, key='-IMPORT_PROJECT-', target='-IMPORT_PROJECT-',
+                           file_types=(('JSON', '.json'),))
+        ])
+    return Gui.Window('Story Sheet', layout, size=(500, 275), resizable=True)
 
 
-def generate_project_layout(project: Project) -> []:
+def generate_project_window(project: Project) -> Gui.Window:
+    column_layout = []
     layout = [
         [
             Gui.Input(default_text=project.name, key='-INPUT_NAME_PROJECT-'),
             Gui.Push(),
-            Gui.Button('Import', key='-IMPORT_SHEET-'),
+            Gui.FileBrowse('Import', enable_events=True, key='-IMPORT_SHEET-', target='-IMPORT_SHEET-',
+                           file_types=(('JSON', '.json'),)),
             Gui.Button('New Sheet', key='-NEW_SHEET-')
         ],
         [
@@ -281,14 +286,17 @@ def generate_project_layout(project: Project) -> []:
         layout.append([
             Gui.Text('No sheet')
         ])
-    for i in range(len(project.sheets)):
-        layout.append([
-            Gui.Text(project.sheets[i].name),
-            Gui.Push(),
-            Gui.Button('Edit', key='-EDIT_SHEET_' + project.sheets[i].id + '-'),
-            Gui.Button('Export', key='-EXPORT_SHEET_' + project.sheets[i].id + '-'),
-            Gui.Button('Delete', key='-DELETE_SHEET_' + project.sheets[i].id + '-')
-        ])
+    else:
+        for i in range(len(project.sheets)):
+            column_layout.append([
+                Gui.Text(project.sheets[i].name),
+                Gui.Push(),
+                Gui.Button('Edit', key='-EDIT_SHEET_' + project.sheets[i].id + '-'),
+                Gui.Button('Export', key='-EXPORT_SHEET_' + project.sheets[i].id + '-'),
+                Gui.Button('Delete', key='-DELETE_SHEET_' + project.sheets[i].id + '-')
+            ])
+        layout.append([Gui.Column(column_layout, size=(500, 150), expand_x=True, expand_y=True, scrollable=True,
+                                  vertical_scroll_only=True)])
     layout.append([
         Gui.HorizontalSeparator()
     ])
@@ -297,10 +305,11 @@ def generate_project_layout(project: Project) -> []:
         Gui.Push(),
         Gui.Button('Close', key='-CLOSE-', tooltip='Data are not saved')
     ])
-    return layout
+    return Gui.Window('Project', layout, size=(500, 300), resizable=True)
 
 
-def generate_sheet_layout(sheet: Sheet) -> []:
+def generate_sheet_window(sheet: Sheet) -> Gui.Window:
+    column_layout = []
     layout = [
         [
             Gui.Input(default_text=sheet.name, key='-INPUT_NAME_SHEET-')
@@ -320,11 +329,13 @@ def generate_sheet_layout(sheet: Sheet) -> []:
         sheet.add_content(Content({'type': 1, 'Occupation/Job': ''}))
         sheet.add_content(Content({'type': 1, 'Job Rank/Position': ''}))
     for i in range(len(sheet.contents)):
-        layout.append([
+        column_layout.append([
             Gui.Text(sheet.contents[i].entry),
             Gui.Push(),
             Gui.Input(sheet.contents[i].content, key='-INPUT_1_' + str(i) + '-')
         ])
+    layout.append([Gui.Column(column_layout, size=(500, 150), expand_x=True, expand_y=True, scrollable=True,
+                              vertical_scroll_only=True)])
     layout.append([
         Gui.HorizontalSeparator()
     ])
@@ -333,13 +344,13 @@ def generate_sheet_layout(sheet: Sheet) -> []:
         Gui.Push(),
         Gui.Button('Close', key='-CLOSE-', tooltip='Data may not be saved')
     ])
-    return layout
+    return Gui.Window('Sheet', layout, size=(500, 300), resizable=True)
 
 
 if __name__ == '__main__':
     # Initialisation
     application = init()
-    window = Gui.Window('Story Sheet', generate_main_layout(application))
+    window = generate_main_window(application)
     current_window = 0
     current_project = Project({})
     current_sheet = Sheet({})
@@ -348,8 +359,6 @@ if __name__ == '__main__':
     while True:
         event, values = window.read()
 
-        print(values)
-
         if event == Gui.WIN_CLOSED or event == '-CLOSE-':
             if current_window == 0:
                 save(application)
@@ -357,23 +366,23 @@ if __name__ == '__main__':
             elif current_window == 1:
                 window.close()
                 current_window = 0
-                window = Gui.Window('Story Sheet', generate_main_layout(application))
+                window = generate_main_window(application)
             elif current_window == 2:
                 window.close()
                 current_window = 1
-                window = Gui.Window('Project', generate_project_layout(current_project))
+                window = generate_project_window(current_project)
 
         if event == '-NEW_PROJECT-':
             window.close()
             current_window = 1
             current_project = Project({})
-            window = Gui.Window('New Project', generate_project_layout(current_project))
+            window = generate_project_window(current_project)
 
         if event == '-NEW_SHEET-':
             window.close()
             current_window = 2
             current_sheet = Sheet({})
-            window = Gui.Window('New Sheet', generate_sheet_layout(current_sheet))
+            window = generate_sheet_window(current_sheet)
 
         if event == '-SAVE_PROJECT-':
             # save date in current_project
@@ -394,7 +403,7 @@ if __name__ == '__main__':
             window.close()
             current_window = 1
             current_project = application.get_project_from_key_edit(event)
-            window = Gui.Window('Edit Project', generate_project_layout(current_project))
+            window = generate_project_window(current_project)
 
         if event in application.keys_export_projects:
             current_window = 0
@@ -406,13 +415,13 @@ if __name__ == '__main__':
             current_window = 0
             delete_project = application.get_project_from_key_delete(event)
             application.delete_project(delete_project)
-            window = Gui.Window('Story Sheet', generate_main_layout(application))
+            window = generate_main_window(application)
 
         if event in current_project.keys_edit_sheets:
             window.close()
             current_window = 2
             current_sheet = current_project.get_sheet_from_key_edit(event)
-            window = Gui.Window('Edit Sheet', generate_sheet_layout(current_sheet))
+            window = generate_sheet_window(current_sheet)
 
         if event in current_project.keys_export_sheets:
             current_window = 1
@@ -424,24 +433,24 @@ if __name__ == '__main__':
             current_window = 1
             delete_sheet = current_project.get_sheet_from_key_delete(event)
             current_project.delete_sheet(delete_sheet)
-            window = Gui.Window('Edit Project', generate_project_layout(current_project))
+            window = generate_project_window(current_project)
 
         if event == '-IMPORT_PROJECT-':
             project_path = values['-IMPORT_PROJECT-']
             window.close()
             current_window = 1
-            with open(project_path) as data_file:
-                project_data = json.load(data_file)
+            with open(project_path) as import_project_file:
+                project_data = json.load(import_project_file)
                 current_project = Project(project_data)
-            window = Gui.Window('Import Project', generate_project_layout(current_project))
+            window = generate_project_window(current_project)
 
         if event == '-IMPORT_SHEET-':
             sheet_path = values['-IMPORT_SHEET-']
             window.close()
-            current_window = 1
-            with open(sheet_path) as data_file:
-                sheet_data = json.load(data_file)
+            current_window = 2
+            with open(sheet_path) as import_sheet_file:
+                sheet_data = json.load(import_sheet_file)
                 current_sheet = Sheet(sheet_data)
-            window = Gui.Window('Import Sheet', generate_sheet_layout(current_sheet))
+            window = generate_sheet_window(current_sheet)
 
     window.close()
